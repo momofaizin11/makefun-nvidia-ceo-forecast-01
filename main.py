@@ -10,22 +10,22 @@ import math
 import os
 
 HORIZONS_DEFAULT = 240
-TAIL = 120
-SIGMA_SCALE = 0.51
+TAILS = (120, 600)
+SIGMA_SCALE = 0.54
 WIDTH_EXP = 0.45
-K = (-2.6, -0.6, -0.2, 0.2, 2.8)
+K = (-2.9, -0.85, -0.2, 0.05, 2.2)
 FLOOR_SIGMA = 0.0005
 
 
-def tail_prices(prices):
-    """At most the last TAIL points; a shorter series drops its first point."""
-    if len(prices) > TAIL:
-        return prices[-TAIL:]
+def tail_prices(prices, tail):
+    """At most the last `tail` points; a shorter series drops its first point."""
+    if len(prices) > tail:
+        return prices[-tail:]
     return prices[1:]
 
 
-def tick_sigma(prices):
-    tail = tail_prices(prices)
+def window_sigma(prices, tail):
+    tail = tail_prices(prices, tail)
     if len(tail) < 3:
         return FLOOR_SIGMA
     diffs = [tail[i + 1] - tail[i] for i in range(len(tail) - 1)]
@@ -36,6 +36,11 @@ def tick_sigma(prices):
     if s0 < FLOOR_SIGMA:
         return FLOOR_SIGMA
     return s0
+
+
+def tick_sigma(prices):
+    """The calmer of the short (120) and long (600) tick volatilities."""
+    return min(window_sigma(prices, t) for t in TAILS)
 
 
 def quantile_rows(x, s, horizon):
